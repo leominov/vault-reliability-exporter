@@ -52,20 +52,17 @@ func NewVaultExporter(config *Config) *Exporter {
 }
 
 func (e *Exporter) send() {
-	if err := push.Collectors(e.config.JobName, push.HostnameGroupingKey(), e.config.PushgatewayURL, e.scrapeTime); err != nil {
-		logrus.Errorf("Could not push scrapeTime to Pushgateway: %v", err)
-	}
-	if err := push.Collectors(e.config.JobName, push.HostnameGroupingKey(), e.config.PushgatewayURL, e.totalScrapes); err != nil {
-		logrus.Errorf("Could not push totalScrapes to Pushgateway: %v", err)
-	}
-	if err := push.Collectors(e.config.JobName, push.HostnameGroupingKey(), e.config.PushgatewayURL, e.authErrors); err != nil {
-		logrus.Errorf("Could not push authErrors to Pushgateway: %v", err)
-	}
-	if err := push.Collectors(e.config.JobName, push.HostnameGroupingKey(), e.config.PushgatewayURL, e.readErrors); err != nil {
-		logrus.Errorf("Could not push readErrors to Pushgateway: %v", err)
-	}
-	if err := push.Collectors(e.config.JobName, push.HostnameGroupingKey(), e.config.PushgatewayURL, e.writeErrors); err != nil {
-		logrus.Errorf("Could not push writeErrors to Pushgateway: %v", err)
+	if err := push.Collectors(
+		e.config.JobName,
+		push.HostnameGroupingKey(),
+		e.config.PushgatewayURL,
+		e.scrapeTime,
+		e.totalScrapes,
+		e.authErrors,
+		e.readErrors,
+		e.writeErrors,
+	); err != nil {
+		logrus.Errorf("Could not push to Pushgateway: %v", err)
 	}
 }
 
