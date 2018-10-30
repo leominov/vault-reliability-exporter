@@ -19,7 +19,7 @@ type Config struct {
 }
 
 var (
-	flagLogFormat = flag.String("log-format", "txt", "Log format, valid options are txt and json")
+	flagLogFormat = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
 	flagDebug     = flag.Bool("debug", false, "Output verbose debug information.")
 
 	flagPushgatewayUrl      = flag.String("pushgateway.addr", "", "Pushgateway address.")

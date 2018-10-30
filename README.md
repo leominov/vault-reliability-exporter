@@ -9,7 +9,7 @@ Usage of exporter:
   -job string
     	Job's name. (default "vault_reliability_job")
   -log-format string
-    	Log format, valid options are txt and json (default "txt")
+    	Log format, valid options are txt and json. (default "txt")
   -namespace string
     	Namespace for metrics. (default "vault_reliability")
   -pushgateway.addr string
