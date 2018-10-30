@@ -10,7 +10,7 @@ import (
 type Config struct {
 	Namespace      string
 	JobName        string
-	PushgatewayUrl string
+	PushgatewayURL string
 	Interval       time.Duration
 	Addr           string
 	AuthMethod     string
@@ -22,7 +22,7 @@ var (
 	flagLogFormat = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
 	flagDebug     = flag.Bool("debug", false, "Output verbose debug information.")
 
-	flagPushgatewayUrl      = flag.String("pushgateway.addr", "", "Pushgateway address.")
+	flagPushgatewayURL      = flag.String("pushgateway.addr", "", "Pushgateway address.")
 	flagExporterNamespace   = flag.String("namespace", "vault_reliability", "Namespace for metrics.")
 	flagExporterJobName     = flag.String("job", "vault_reliability_job", "Job's name.")
 	flagVaultAddr           = flag.String("vault.addr", "", "Vault address.")
@@ -52,7 +52,7 @@ func main() {
 	config := &Config{
 		Namespace:      *flagExporterNamespace,
 		JobName:        *flagExporterJobName,
-		PushgatewayUrl: *flagPushgatewayUrl,
+		PushgatewayURL: *flagPushgatewayURL,
 		Interval:       *flagVaultRepeatInterval,
 		Addr:           *flagVaultAddr,
 		AuthMethod:     *flagVaultAuthMetod,
