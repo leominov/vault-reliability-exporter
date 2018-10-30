@@ -16,6 +16,7 @@ type Exporter struct {
 	readErrors   prometheus.Gauge
 	writeErrors  prometheus.Gauge
 	totalScrapes prometheus.Counter
+	duration     prometheus.Gauge
 }
 
 func NewVaultExporter(config *Config) *Exporter {
@@ -46,6 +47,11 @@ func NewVaultExporter(config *Config) *Exporter {
 			Name:      "exporter_last_write_error",
 			Help:      "The last write error status.",
 		}),
+		duration: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: config.Namespace,
+			Name:      "exporter_last_scrape_duration_seconds",
+			Help:      "The last scrape duration.",
+		}),
 	}
 }
 
@@ -59,6 +65,7 @@ func (e *Exporter) send() {
 		e.authErrors,
 		e.readErrors,
 		e.writeErrors,
+		e.duration,
 	); err != nil {
 		logrus.Errorf("Could not push to Pushgateway: %v", err)
 	}
@@ -102,7 +109,11 @@ func (e *Exporter) Collect() {
 			logrus.Debug("Tick")
 			e.totalScrapes.Inc()
 			e.scrapeTime.SetToCurrentTime()
+
+			now := time.Now().UnixNano()
 			e.collect()
+			e.duration.Set(float64(time.Now().UnixNano()-now) / 1000000000)
+
 			e.send()
 		}
 	}
