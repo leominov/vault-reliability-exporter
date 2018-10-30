@@ -65,14 +65,16 @@ func (e *Exporter) send() {
 }
 
 func (e *Exporter) collect() {
+	// Check aut
 	vaultCli, err := NewClient(e.config.Addr, e.config.AuthLogin, e.config.AuthPassword, e.config.AuthMethod)
 	if err != nil {
 		e.authErrors.Set(1.0)
 		logrus.Error(err)
 		return
-	} else {
-		e.authErrors.Set(0.0)
 	}
+	e.authErrors.Set(0.0)
+
+	// Check write
 	_, err = vaultCli.Logical().Write(e.config.SecretPath, map[string]interface{}{
 		"foo": "bar",
 	})
@@ -80,17 +82,17 @@ func (e *Exporter) collect() {
 		e.writeErrors.Set(1.0)
 		logrus.Error(err)
 		return
-	} else {
-		e.writeErrors.Set(0.0)
 	}
+	e.writeErrors.Set(0.0)
+
+	// Check read
 	_, err = vaultCli.Logical().Read(e.config.SecretPath)
 	if err != nil {
 		e.readErrors.Set(1.0)
 		logrus.Error(err)
 		return
-	} else {
-		e.readErrors.Set(0.0)
 	}
+	e.readErrors.Set(0.0)
 }
 
 func (e *Exporter) Collect() {
