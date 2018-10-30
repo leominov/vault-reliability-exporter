@@ -12,6 +12,7 @@ type Config struct {
 	JobName        string
 	PushgatewayURL string
 	Interval       time.Duration
+	SecretPath     string
 	Addr           string
 	AuthMethod     string
 	AuthLogin      string
@@ -30,6 +31,7 @@ var (
 	flagVaultAuthLogin      = flag.String("vault.auth-login", "", "Vault user's login.")
 	flagVaultAuthPassw      = flag.String("vault.auth-password", "", "Vault user's password.")
 	flagVaultRepeatInterval = flag.Duration("vault.repeat-interval", time.Second, "Checks repeat interval.")
+	flagVaultSecretPath     = flag.String("vault.sectret-path", "probe-secrets/test", "Vault secret path")
 )
 
 func main() {
@@ -54,6 +56,7 @@ func main() {
 		JobName:        *flagExporterJobName,
 		PushgatewayURL: *flagPushgatewayURL,
 		Interval:       *flagVaultRepeatInterval,
+		SecretPath:     *flagVaultSecretPath,
 		Addr:           *flagVaultAddr,
 		AuthMethod:     *flagVaultAuthMetod,
 		AuthLogin:      *flagVaultAuthLogin,

@@ -9,8 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/push"
 )
 
-const secretKeyPath = "probe-secrets/test"
-
 type Exporter struct {
 	config       *Config
 	scrapeTime   prometheus.Gauge
@@ -75,7 +73,7 @@ func (e *Exporter) collect() {
 	} else {
 		e.authErrors.Set(0.0)
 	}
-	_, err = vaultCli.Logical().Write(secretKeyPath, map[string]interface{}{
+	_, err = vaultCli.Logical().Write(e.config.SecretPath, map[string]interface{}{
 		"foo": "bar",
 	})
 	if err != nil {
@@ -85,7 +83,7 @@ func (e *Exporter) collect() {
 	} else {
 		e.writeErrors.Set(0.0)
 	}
-	_, err = vaultCli.Logical().Read(secretKeyPath)
+	_, err = vaultCli.Logical().Read(e.config.SecretPath)
 	if err != nil {
 		e.readErrors.Set(1.0)
 		logrus.Error(err)
