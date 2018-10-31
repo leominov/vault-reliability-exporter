@@ -11,7 +11,7 @@ Usage of exporter:
   -log-format string
     	Log format, valid options are txt and json. (default "txt")
   -namespace string
-    	Namespace for metrics. (default "vault_reliability")
+    	Namespace for metrics. (default "vault_reliability_exporter")
   -pushgateway.addr string
     	Pushgateway address.
   -vault.addr string
@@ -24,6 +24,8 @@ Usage of exporter:
     	Vault user's password.
   -vault.repeat-interval duration
     	Checks repeat interval. (default 1s)
+  -vault.sectret-path string
+    	Vault secret path (default "probe-secrets/test")
 ```
 
 ## Metrics
