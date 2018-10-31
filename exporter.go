@@ -41,9 +41,7 @@ type Exporter struct {
 	config       *Config
 	execTime     *prometheus.GaugeVec
 	scrapeTime   prometheus.Gauge
-	authErrors   prometheus.Gauge
-	readErrors   prometheus.Gauge
-	writeErrors  prometheus.Gauge
+	errors       *prometheus.GaugeVec
 	totalScrapes prometheus.Counter
 	duration     prometheus.Gauge
 
@@ -76,22 +74,14 @@ func NewVaultExporter(config *Config) *Exporter {
 		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: config.Namespace,
 			Name:      "scrapes_total",
-			Help:      "Current total redis scrapes.",
+			Help:      "Current total vault scrapes.",
 		}),
-		authErrors: prometheus.NewGauge(prometheus.GaugeOpts{
+		errors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "auth_error_total",
-			Help:      "The last auth error status.",
-		}),
-		readErrors: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: config.Namespace,
-			Name:      "read_error_total",
-			Help:      "The last read error status.",
-		}),
-		writeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
-			Namespace: config.Namespace,
-			Name:      "write_error_total",
-			Help:      "The last write error status.",
+			Name:      "errors_total",
+			Help:      "Current total errors.",
+		}, []string{
+			"type",
 		}),
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
@@ -122,9 +112,7 @@ func (e *Exporter) send() {
 		e.config.PushgatewayURL,
 		e.scrapeTime,
 		e.totalScrapes,
-		e.authErrors,
-		e.readErrors,
-		e.writeErrors,
+		e.errors,
 		e.duration,
 		e.execTime,
 	); err != nil {
@@ -132,7 +120,7 @@ func (e *Exporter) send() {
 	}
 }
 
-func (e *Exporter) collect() {
+func (e *Exporter) collect() error {
 	var (
 		now      int64
 		duration float64
@@ -141,9 +129,9 @@ func (e *Exporter) collect() {
 	now = time.Now().UnixNano()
 	vaultCli, err := NewClient(e.config.Addr, e.config.AuthLogin, e.config.AuthPassword, e.config.AuthMethod)
 	if err != nil {
-		e.authErrors.Inc()
+		e.errors.WithLabelValues(BucketAuth).Inc()
 		logrus.Error(err)
-		return
+		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
 	e.IncBucketCounter(BucketAuth, duration)
@@ -154,9 +142,9 @@ func (e *Exporter) collect() {
 		"foo": "bar",
 	})
 	if err != nil {
-		e.writeErrors.Inc()
+		e.errors.WithLabelValues(BucketWrite).Inc()
 		logrus.Error(err)
-		return
+		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
 	e.IncBucketCounter(BucketWrite, duration)
@@ -165,12 +153,14 @@ func (e *Exporter) collect() {
 	now = time.Now().UnixNano()
 	_, err = vaultCli.Logical().Read(e.config.SecretPath)
 	if err != nil {
-		e.readErrors.Inc()
+		e.errors.WithLabelValues(BucketRead).Inc()
 		logrus.Error(err)
-		return
+		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
 	e.IncBucketCounter(BucketRead, duration)
+
+	return nil
 }
 
 func (e *Exporter) IncBucketCounter(name string, duration float64) {
@@ -183,7 +173,16 @@ func (e *Exporter) IncBucketCounter(name string, duration float64) {
 	}
 }
 
+func (e *Exporter) resetErrorCounters() {
+	e.errors.WithLabelValues(BucketTotal).Set(0.0)
+	e.errors.WithLabelValues(BucketAuth).Set(0.0)
+	e.errors.WithLabelValues(BucketRead).Set(0.0)
+	e.errors.WithLabelValues(BucketWrite).Set(0.0)
+}
+
 func (e *Exporter) Collect() {
+	e.resetErrorCounters()
+
 	for {
 		select {
 		case <-time.NewTicker(e.config.Interval).C:
@@ -192,7 +191,9 @@ func (e *Exporter) Collect() {
 			e.scrapeTime.SetToCurrentTime()
 
 			now := time.Now().UnixNano()
-			e.collect()
+			if err := e.collect(); err != nil {
+				e.errors.WithLabelValues(BucketTotal).Inc()
+			}
 			duration := float64(time.Now().UnixNano()-now) / 1000000000
 
 			e.duration.Set(duration)

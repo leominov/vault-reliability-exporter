@@ -28,10 +28,8 @@ Usage of exporter:
 
 ## Metrics
 
+* `vault_reliability_exporter_errors_total` by type
 * `vault_reliability_execution_time_bucket` by le, type
 * `vault_reliability_exporter_scrape_time`
 * `vault_reliability_exporter_scrapes_total`
-* `vault_reliability_exporter_auth_error_total`
-* `vault_reliability_exporter_read_error_total`
-* `vault_reliability_exporter_write_error_total`
 * `vault_reliability_exporter_last_scrape_duration_seconds`
