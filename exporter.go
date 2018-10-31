@@ -34,17 +34,17 @@ func NewVaultExporter(config *Config) *Exporter {
 		}),
 		authErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_last_auth_error",
+			Name:      "exporter_auth_error_total",
 			Help:      "The last auth error status.",
 		}),
 		readErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_last_read_error",
+			Name:      "exporter_read_error_total",
 			Help:      "The last read error status.",
 		}),
 		writeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_last_write_error",
+			Name:      "exporter_write_error_total",
 			Help:      "The last write error status.",
 		}),
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
@@ -75,31 +75,28 @@ func (e *Exporter) collect() {
 	// Check aut
 	vaultCli, err := NewClient(e.config.Addr, e.config.AuthLogin, e.config.AuthPassword, e.config.AuthMethod)
 	if err != nil {
-		e.authErrors.Set(1.0)
+		e.authErrors.Inc()
 		logrus.Error(err)
 		return
 	}
-	e.authErrors.Set(0.0)
 
 	// Check write
 	_, err = vaultCli.Logical().Write(e.config.SecretPath, map[string]interface{}{
 		"foo": "bar",
 	})
 	if err != nil {
-		e.writeErrors.Set(1.0)
+		e.writeErrors.Inc()
 		logrus.Error(err)
 		return
 	}
-	e.writeErrors.Set(0.0)
 
 	// Check read
 	_, err = vaultCli.Logical().Read(e.config.SecretPath)
 	if err != nil {
-		e.readErrors.Set(1.0)
+		e.readErrors.Inc()
 		logrus.Error(err)
 		return
 	}
-	e.readErrors.Set(0.0)
 }
 
 func (e *Exporter) Collect() {
