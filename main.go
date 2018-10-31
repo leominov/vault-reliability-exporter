@@ -24,7 +24,7 @@ var (
 	flagDebug     = flag.Bool("debug", false, "Output verbose debug information.")
 
 	flagPushgatewayURL      = flag.String("pushgateway.addr", "", "Pushgateway address.")
-	flagExporterNamespace   = flag.String("namespace", "vault_reliability", "Namespace for metrics.")
+	flagExporterNamespace   = flag.String("namespace", "vault_reliability_exporter", "Namespace for metrics.")
 	flagExporterJobName     = flag.String("job", "vault_reliability_job", "Job's name.")
 	flagVaultAddr           = flag.String("vault.addr", "", "Vault address.")
 	flagVaultAuthMetod      = flag.String("vault.auth-method", "userpass", "Vault user's auth method.")

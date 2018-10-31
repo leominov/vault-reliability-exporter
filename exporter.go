@@ -70,32 +70,32 @@ func NewVaultExporter(config *Config) *Exporter {
 		}),
 		scrapeTime: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_scrape_time",
+			Name:      "scrape_time",
 			Help:      "The last scrape time.",
 		}),
 		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_scrapes_total",
+			Name:      "scrapes_total",
 			Help:      "Current total redis scrapes.",
 		}),
 		authErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_auth_error_total",
+			Name:      "auth_error_total",
 			Help:      "The last auth error status.",
 		}),
 		readErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_read_error_total",
+			Name:      "read_error_total",
 			Help:      "The last read error status.",
 		}),
 		writeErrors: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_write_error_total",
+			Name:      "write_error_total",
 			Help:      "The last write error status.",
 		}),
 		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
-			Name:      "exporter_last_scrape_duration_seconds",
+			Name:      "last_scrape_duration_seconds",
 			Help:      "The last scrape duration.",
 		}),
 		execBucketCounters: map[string]map[float64]float64{
