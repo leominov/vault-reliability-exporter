@@ -26,6 +26,8 @@ Usage of exporter:
     	Checks repeat interval. (default 1s)
   -vault.secret-path string
     	Vault secret path. (default "probe-secrets/test")
+  -vault.timeout duration
+    	Vault client's timeout. (default 10s)
 ```
 
 ## Metrics

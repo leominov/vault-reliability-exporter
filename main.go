@@ -11,6 +11,7 @@ type Config struct {
 	Namespace      string
 	JobName        string
 	PushgatewayURL string
+	ClientTimeout  time.Duration
 	Interval       time.Duration
 	SecretPath     string
 	Addr           string
@@ -27,6 +28,7 @@ var (
 	flagExporterNamespace   = flag.String("namespace", "vault_reliability_exporter", "Namespace for metrics.")
 	flagExporterJobName     = flag.String("job", "vault_reliability_job", "Job's name.")
 	flagVaultAddr           = flag.String("vault.addr", "", "Vault address.")
+	flagVaultClientTimeout  = flag.Duration("vault.timeout", 30*time.Second, "Vault client's timeout.")
 	flagVaultAuthMetod      = flag.String("vault.auth-method", "userpass", "Vault user's auth method.")
 	flagVaultAuthLogin      = flag.String("vault.auth-login", "", "Vault user's login.")
 	flagVaultAuthPassw      = flag.String("vault.auth-password", "", "Vault user's password.")
@@ -55,6 +57,7 @@ func main() {
 		Namespace:      *flagExporterNamespace,
 		JobName:        *flagExporterJobName,
 		PushgatewayURL: *flagPushgatewayURL,
+		ClientTimeout:  *flagVaultClientTimeout,
 		Interval:       *flagVaultRepeatInterval,
 		SecretPath:     *flagVaultSecretPath,
 		Addr:           *flagVaultAddr,

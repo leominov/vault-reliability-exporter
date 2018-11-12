@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/vault/api"
 )
 
-func NewClient(addr, user, pass, authMethod string) (*api.Client, error) {
+func NewClient(addr, user, pass, authMethod string, timeout time.Duration) (*api.Client, error) {
 	config := api.Config{
 		Address: addr,
 	}
@@ -14,6 +15,7 @@ func NewClient(addr, user, pass, authMethod string) (*api.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	client.SetClientTimeout(timeout)
 	options := map[string]interface{}{
 		"password": pass,
 	}

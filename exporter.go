@@ -127,7 +127,13 @@ func (e *Exporter) collect() error {
 	)
 	// Check aut
 	now = time.Now().UnixNano()
-	vaultCli, err := NewClient(e.config.Addr, e.config.AuthLogin, e.config.AuthPassword, e.config.AuthMethod)
+	vaultCli, err := NewClient(
+		e.config.Addr,
+		e.config.AuthLogin,
+		e.config.AuthPassword,
+		e.config.AuthMethod,
+		e.config.ClientTimeout,
+	)
 	if err != nil {
 		e.errors.WithLabelValues(BucketAuth).Inc()
 		logrus.Error(err)
