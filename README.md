@@ -27,7 +27,7 @@ Usage of exporter:
   -vault.secret-path string
     	Vault secret path. (default "probe-secrets/test")
   -vault.timeout duration
-    	Vault client's timeout. (default 10s)
+    	Vault client's timeout. (default 30s)
 ```
 
 ## Metrics
