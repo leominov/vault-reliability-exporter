@@ -2,9 +2,16 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"time"
 
+	"github.com/prometheus/common/version"
+
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	name = "Vault Reliability Exporter"
 )
 
 type Config struct {
@@ -21,6 +28,8 @@ type Config struct {
 }
 
 var (
+	flagVersion = flag.Bool("version", false, "Prints version and exit.")
+
 	flagLogFormat = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
 	flagDebug     = flag.Bool("debug", false, "Output verbose debug information.")
 
@@ -39,6 +48,11 @@ var (
 func main() {
 	flag.Parse()
 
+	if *flagVersion {
+		fmt.Println(version.Print(name))
+		return
+	}
+
 	switch *flagLogFormat {
 	case "json":
 		logrus.SetFormatter(&logrus.JSONFormatter{})
@@ -46,7 +60,7 @@ func main() {
 		logrus.SetFormatter(&logrus.TextFormatter{})
 	}
 
-	logrus.Info("Starting Vault Reliability Exporter...")
+	logrus.Infof("Starting %s v%s...", name, version.Version)
 
 	if *flagDebug {
 		logrus.SetLevel(logrus.DebugLevel)
