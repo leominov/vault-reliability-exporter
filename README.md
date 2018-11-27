@@ -8,14 +8,16 @@ Usage of exporter:
     	Output verbose debug information.
   -job string
     	Job's name. (default "vault_reliability_job")
+  -labels string
+    	Comma-separated list of additional labels in format KEY=VALUE.
   -log-format string
     	Log format, valid options are txt and json. (default "txt")
   -namespace string
     	Namespace for metrics. (default "vault_reliability_exporter")
   -pushgateway.addr string
-    	Pushgateway address.
+    	Pushgateway address. (default "127.0.0.1:9091")
   -vault.addr string
-    	Vault address.
+    	Vault address. (default "https://127.0.0.1:8200")
   -vault.auth-login string
     	Vault user's login.
   -vault.auth-method string

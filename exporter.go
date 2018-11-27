@@ -40,20 +40,12 @@ var (
 type Exporter struct {
 	config       *Config
 	execTime     *prometheus.GaugeVec
-	scrapeTime   prometheus.Gauge
+	scrapeTime   *prometheus.GaugeVec
 	errors       *prometheus.GaugeVec
-	totalScrapes prometheus.Counter
-	duration     prometheus.Gauge
+	totalScrapes *prometheus.CounterVec
+	duration     *prometheus.GaugeVec
 
 	execBucketCounters map[string]map[float64]float64
-}
-
-func copyMap(originalMap map[float64]float64) map[float64]float64 {
-	newMap := make(map[float64]float64)
-	for key, value := range originalMap {
-		newMap[key] = value
-	}
-	return newMap
 }
 
 func NewVaultExporter(config *Config) *Exporter {
@@ -63,31 +55,27 @@ func NewVaultExporter(config *Config) *Exporter {
 			Namespace: config.Namespace,
 			Name:      "execution_time_bucket",
 			Help:      "Execution time.",
-		}, []string{
-			"le", "type",
-		}),
-		scrapeTime: prometheus.NewGauge(prometheus.GaugeOpts{
+		}, joinWithLabelsMap([]string{"le", "type"}, config.Labels)),
+		scrapeTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
 			Name:      "scrape_time",
 			Help:      "The last scrape time.",
-		}),
-		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
+		}, joinWithLabelsMap([]string{}, config.Labels)),
+		totalScrapes: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: config.Namespace,
 			Name:      "scrapes_total",
 			Help:      "Current total vault scrapes.",
-		}),
+		}, joinWithLabelsMap([]string{}, config.Labels)),
 		errors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
 			Name:      "errors_total",
 			Help:      "Current total errors.",
-		}, []string{
-			"type",
-		}),
-		duration: prometheus.NewGauge(prometheus.GaugeOpts{
+		}, joinWithLabelsMap([]string{"type"}, config.Labels)),
+		duration: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: config.Namespace,
 			Name:      "last_scrape_duration_seconds",
 			Help:      "The last scrape duration.",
-		}),
+		}, joinWithLabelsMap([]string{}, config.Labels)),
 		execBucketCounters: map[string]map[float64]float64{
 			BucketTotal: copyMap(defaultBucket),
 			BucketAuth:  copyMap(defaultBucket),
@@ -97,13 +85,34 @@ func NewVaultExporter(config *Config) *Exporter {
 	}
 }
 
+func (e *Exporter) AddGaugeValues(g *prometheus.GaugeVec, val []string) prometheus.Gauge {
+	var values []string
+	if len(val) != 0 {
+		values = val
+	}
+	values = append(values, labelValues(e.config.Labels)...)
+	return g.WithLabelValues(values...)
+}
+
+func (e *Exporter) AddCounterValues(c *prometheus.CounterVec, val []string) prometheus.Counter {
+	var values []string
+	if len(val) != 0 {
+		values = val
+	}
+	values = append(values, labelValues(e.config.Labels)...)
+	return c.WithLabelValues(values...)
+}
+
 func (e *Exporter) send() {
 	for key, bucket := range e.execBucketCounters {
 		for le, val := range bucket {
-			e.execTime.WithLabelValues(
-				fmt.Sprintf("%v", le),
-				key,
-			).Set(val)
+			e.AddGaugeValues(
+				e.execTime,
+				[]string{
+					fmt.Sprintf("%v", le),
+					key,
+				}).
+				Set(val)
 		}
 	}
 	if err := push.Collectors(
@@ -135,7 +144,7 @@ func (e *Exporter) collect() error {
 		e.config.ClientTimeout,
 	)
 	if err != nil {
-		e.errors.WithLabelValues(BucketAuth).Inc()
+		e.AddGaugeValues(e.errors, []string{BucketAuth}).Inc()
 		logrus.Error(err)
 		return err
 	}
@@ -144,11 +153,14 @@ func (e *Exporter) collect() error {
 
 	// Check write
 	now = time.Now().UnixNano()
-	_, err = vaultCli.Logical().Write(e.config.SecretPath, map[string]interface{}{
-		"foo": "bar",
-	})
+	_, err = vaultCli.Logical().Write(
+		e.config.SecretPath,
+		map[string]interface{}{
+			"foo": "bar",
+		},
+	)
 	if err != nil {
-		e.errors.WithLabelValues(BucketWrite).Inc()
+		e.AddGaugeValues(e.errors, []string{BucketWrite}).Inc()
 		logrus.Error(err)
 		return err
 	}
@@ -159,7 +171,7 @@ func (e *Exporter) collect() error {
 	now = time.Now().UnixNano()
 	_, err = vaultCli.Logical().Read(e.config.SecretPath)
 	if err != nil {
-		e.errors.WithLabelValues(BucketRead).Inc()
+		e.AddGaugeValues(e.errors, []string{BucketRead}).Inc()
 		logrus.Error(err)
 		return err
 	}
@@ -180,29 +192,28 @@ func (e *Exporter) IncBucketCounter(name string, duration float64) {
 }
 
 func (e *Exporter) resetErrorCounters() {
-	e.errors.WithLabelValues(BucketTotal).Set(0.0)
-	e.errors.WithLabelValues(BucketAuth).Set(0.0)
-	e.errors.WithLabelValues(BucketRead).Set(0.0)
-	e.errors.WithLabelValues(BucketWrite).Set(0.0)
+	e.AddGaugeValues(e.errors, []string{BucketTotal}).Set(0.0)
+	e.AddGaugeValues(e.errors, []string{BucketAuth}).Set(0.0)
+	e.AddGaugeValues(e.errors, []string{BucketRead}).Set(0.0)
+	e.AddGaugeValues(e.errors, []string{BucketWrite}).Set(0.0)
 }
 
 func (e *Exporter) Collect() {
 	e.resetErrorCounters()
-
 	for {
 		select {
 		case <-time.NewTicker(e.config.Interval).C:
 			logrus.Debug("Tick")
-			e.totalScrapes.Inc()
-			e.scrapeTime.SetToCurrentTime()
+			e.AddCounterValues(e.totalScrapes, nil).Inc()
+			e.AddGaugeValues(e.scrapeTime, nil).SetToCurrentTime()
 
 			now := time.Now().UnixNano()
 			if err := e.collect(); err != nil {
-				e.errors.WithLabelValues(BucketTotal).Inc()
+				e.AddGaugeValues(e.errors, []string{BucketTotal}).Inc()
 			}
 			duration := float64(time.Now().UnixNano()-now) / 1000000000
 
-			e.duration.Set(duration)
+			e.AddGaugeValues(e.duration, nil).Set(duration)
 			e.IncBucketCounter(BucketTotal, duration)
 
 			for name, bucker := range e.execBucketCounters {
