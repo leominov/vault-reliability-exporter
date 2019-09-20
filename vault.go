@@ -41,11 +41,13 @@ func NewClient(addr, user, pass, token, roleID, secretID, authMethod string, tim
 	client.SetClientTimeout(timeout)
 
 	options := make(map[string]interface{})
+	path := fmt.Sprintf("auth/%s/login", authMethod)
 	switch authMethod {
 	case tokenAuthMethod:
 		client.SetToken(token)
 		return client, nil
 	case userPassAuthMethod, ldapAuthMethod:
+		path = fmt.Sprintf("auth/%s/login/%s", authMethod, user)
 		options = map[string]interface{}{
 			"password": pass,
 		}
@@ -56,7 +58,6 @@ func NewClient(addr, user, pass, token, roleID, secretID, authMethod string, tim
 		}
 	}
 
-	path := fmt.Sprintf("auth/%s/login/%s", authMethod, user)
 	secret, err := client.Logical().Write(path, options)
 	if err != nil {
 		return nil, err
