@@ -25,9 +25,9 @@ Usage of exporter:
     	Pushgateway address. (default "127.0.0.1:9091")
   -vault.addr string
     	Vault address. (default "https://127.0.0.1:8200")
-  -vault.auth-app-role-role-id string
+  -vault.auth-approle-role-id string
     	Vault RoleID of the AppRole.
-  -vault.auth-app-role-secret-id string
+  -vault.auth-approle-secret-id string
     	Vault SecretID of the AppRole.
   -vault.auth-login string
     	Vault user's login.
