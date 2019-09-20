@@ -1,5 +1,12 @@
 # HashiCorp Vault Reliability Exporter
 
+## Aupported auth backends
+
+* `userpass`
+* `ldap`
+* `token`
+* `approle`
+
 ## Usage
 
 ```
@@ -18,12 +25,18 @@ Usage of exporter:
     	Pushgateway address. (default "127.0.0.1:9091")
   -vault.addr string
     	Vault address. (default "https://127.0.0.1:8200")
+  -vault.auth-app-role-role-id string
+    	Vault RoleID of the AppRole.
+  -vault.auth-app-role-secret-id string
+    	Vault SecretID of the AppRole.
   -vault.auth-login string
     	Vault user's login.
   -vault.auth-method string
     	Vault user's auth method. (default "userpass")
   -vault.auth-password string
     	Vault user's password.
+  -vault.auth-token string
+    	Vault token.
   -vault.repeat-interval duration
     	Checks repeat interval. (default 1s)
   -vault.secret-path string

@@ -16,17 +16,20 @@ const (
 )
 
 type Config struct {
-	Namespace      string
-	JobName        string
-	PushgatewayURL string
-	ClientTimeout  time.Duration
-	Interval       time.Duration
-	SecretPath     string
-	Addr           string
-	AuthMethod     string
-	AuthLogin      string
-	AuthPassword   string
-	Labels         map[string]string
+	Namespace           string
+	JobName             string
+	PushgatewayURL      string
+	ClientTimeout       time.Duration
+	Interval            time.Duration
+	SecretPath          string
+	Addr                string
+	AuthMethod          string
+	AuthLogin           string
+	AuthPassword        string
+	AuthToken           string
+	AuthAppRoleRoleID   string
+	AuthAppRoleSecretID string
+	Labels              map[string]string
 }
 
 var (
@@ -35,17 +38,20 @@ var (
 	flagLogFormat = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
 	flagDebug     = flag.Bool("debug", false, "Output verbose debug information.")
 
-	flagPushgatewayURL      = flag.String("pushgateway.addr", "127.0.0.1:9091", "Pushgateway address.")
-	flagExporterNamespace   = flag.String("namespace", "vault_reliability_exporter", "Namespace for metrics.")
-	flagExporterJobName     = flag.String("job", "vault_reliability_job", "Job's name.")
-	flagVaultAddr           = flag.String("vault.addr", "https://127.0.0.1:8200", "Vault address.")
-	flagVaultClientTimeout  = flag.Duration("vault.timeout", 30*time.Second, "Vault client's timeout.")
-	flagVaultAuthMetod      = flag.String("vault.auth-method", "userpass", "Vault user's auth method.")
-	flagVaultAuthLogin      = flag.String("vault.auth-login", "", "Vault user's login.")
-	flagVaultAuthPassw      = flag.String("vault.auth-password", "", "Vault user's password.")
-	flagVaultRepeatInterval = flag.Duration("vault.repeat-interval", time.Second, "Checks repeat interval.")
-	flagVaultSecretPath     = flag.String("vault.secret-path", "probe-secrets/test", "Vault secret path.")
-	flagLabels              = flag.String("labels", "", "Comma-separated list of additional labels in format KEY=VALUE.")
+	flagPushgatewayURL       = flag.String("pushgateway.addr", "127.0.0.1:9091", "Pushgateway address.")
+	flagExporterNamespace    = flag.String("namespace", "vault_reliability_exporter", "Namespace for metrics.")
+	flagExporterJobName      = flag.String("job", "vault_reliability_job", "Job's name.")
+	flagVaultAddr            = flag.String("vault.addr", "https://127.0.0.1:8200", "Vault address.")
+	flagVaultClientTimeout   = flag.Duration("vault.timeout", 30*time.Second, "Vault client's timeout.")
+	flagVaultAuthMetod       = flag.String("vault.auth-method", "userpass", "Vault user's auth method.")
+	flagVaultAuthLogin       = flag.String("vault.auth-login", "", "Vault user's login.")
+	flagVaultAuthPassw       = flag.String("vault.auth-password", "", "Vault user's password.")
+	flagVaultAuthToken       = flag.String("vault.auth-token", "", "Vault token.")
+	flagVaultAppRoleRoleID   = flag.String("vault.auth-app-role-role-id", "", "Vault RoleID of the AppRole.")
+	flagVaultAppRoleSecretID = flag.String("vault.auth-app-role-secret-id", "", "Vault SecretID of the AppRole.")
+	flagVaultRepeatInterval  = flag.Duration("vault.repeat-interval", time.Second, "Checks repeat interval.")
+	flagVaultSecretPath      = flag.String("vault.secret-path", "probe-secrets/test", "Vault secret path.")
+	flagLabels               = flag.String("labels", "", "Comma-separated list of additional labels in format KEY=VALUE.")
 )
 
 func LabelStringToMap(inputLabels string) map[string]string {
@@ -93,17 +99,20 @@ func main() {
 	logrus.Debugf("Additional labels: %v", labels)
 
 	config := &Config{
-		Namespace:      *flagExporterNamespace,
-		JobName:        *flagExporterJobName,
-		PushgatewayURL: *flagPushgatewayURL,
-		ClientTimeout:  *flagVaultClientTimeout,
-		Interval:       *flagVaultRepeatInterval,
-		SecretPath:     *flagVaultSecretPath,
-		Addr:           *flagVaultAddr,
-		AuthMethod:     *flagVaultAuthMetod,
-		AuthLogin:      *flagVaultAuthLogin,
-		AuthPassword:   *flagVaultAuthPassw,
-		Labels:         labels,
+		Namespace:           *flagExporterNamespace,
+		JobName:             *flagExporterJobName,
+		PushgatewayURL:      *flagPushgatewayURL,
+		ClientTimeout:       *flagVaultClientTimeout,
+		Interval:            *flagVaultRepeatInterval,
+		SecretPath:          *flagVaultSecretPath,
+		Addr:                *flagVaultAddr,
+		AuthMethod:          *flagVaultAuthMetod,
+		AuthLogin:           *flagVaultAuthLogin,
+		AuthPassword:        *flagVaultAuthPassw,
+		AuthToken:           *flagVaultAuthToken,
+		AuthAppRoleRoleID:   *flagVaultAppRoleRoleID,
+		AuthAppRoleSecretID: *flagVaultAppRoleSecretID,
+		Labels:              labels,
 	}
 
 	collector := NewVaultExporter(config)

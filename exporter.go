@@ -140,6 +140,9 @@ func (e *Exporter) collect() error {
 		e.config.Addr,
 		e.config.AuthLogin,
 		e.config.AuthPassword,
+		e.config.AuthToken,
+		e.config.AuthAppRoleRoleID,
+		e.config.AuthAppRoleSecretID,
 		e.config.AuthMethod,
 		e.config.ClientTimeout,
 	)
