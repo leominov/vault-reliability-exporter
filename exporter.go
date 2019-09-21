@@ -60,7 +60,7 @@ func NewVaultExporter(config *Config) *Exporter {
 		}, joinWithLabelsMap([]string{}, config.PGW.Labels)),
 		execHistogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: config.PGW.Namespace,
-			Name:      "execution_time_bucket",
+			Name:      "execution_time",
 			Help:      "Execution time.",
 			Buckets:   defaultBuckets,
 		}, joinWithLabelsMap([]string{"type", "profile"}, config.PGW.Labels)),
