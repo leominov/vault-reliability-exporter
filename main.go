@@ -16,8 +16,7 @@ const (
 )
 
 var (
-	flagVersion = flag.Bool("version", false, "Prints version and exit.")
-
+	flagVersion       = flag.Bool("version", false, "Prints version and exit.")
 	flagLogFormat     = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
 	flagDebug         = flag.Bool("debug", false, "Output verbose debug information.")
 	flagConfigFile    = flag.String("config", "/etc/vault-reliability-exporter/config.yaml", "Path to configuration file.")
