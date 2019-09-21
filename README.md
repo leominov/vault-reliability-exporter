@@ -4,6 +4,16 @@
 
 See [example.config.yaml](example.config.yaml).
 
+## Flags
+
+* `-check` – Check configuration and exit
+* `-config` – Path to configuration file (default "/etc/vault-reliability-exporter/config.yaml")
+* `-debug` – Output verbose debug information
+* `-log-format` – Log format, valid options are txt and json (default "txt")
+* `-version` – Prints version and exit
+* `-web.listen-address` – Address to listen on for telemetry (default ":9356")
+* `-web.telemetry-path` – Path under which to expose metrics (default "/metrics")
+
 ## Metrics
 
 * `vault_reliability_exporter_errors_total` by type, profile
