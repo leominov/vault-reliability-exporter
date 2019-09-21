@@ -1,5 +1,9 @@
 # HashiCorp Vault Reliability Exporter
 
+## Configuration
+
+See (example.config.yaml)[example.config.yaml].
+
 ## Metrics
 
 * `vault_reliability_exporter_errors_total` by type, profile
