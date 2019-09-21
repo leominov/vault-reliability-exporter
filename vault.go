@@ -1,26 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/hashicorp/vault/api"
 )
 
-func NewClient(addr, user, pass, authMethod string, timeout time.Duration) (*api.Client, error) {
+func NewClient(addr string, timeout time.Duration, profile *VaultProfile) (*api.Client, error) {
 	config := api.Config{
 		Address: addr,
+		Timeout: timeout,
 	}
 	client, err := api.NewClient(&config)
 	if err != nil {
 		return nil, err
 	}
-	client.SetClientTimeout(timeout)
-	options := map[string]interface{}{
-		"password": pass,
+	if len(profile.AuthToken) > 0 {
+		client.SetToken(profile.AuthToken)
+		return client, nil
 	}
-	path := fmt.Sprintf("auth/%s/login/%s", authMethod, user)
-	secret, err := client.Logical().Write(path, options)
+	secret, err := client.Logical().Write(profile.AuthPath, profile.AuthData)
 	if err != nil {
 		return nil, err
 	}

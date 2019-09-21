@@ -2,3 +2,4 @@ vault-reliability-exporter
 .build
 .tarballs
 .release
+config.yaml
