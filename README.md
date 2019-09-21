@@ -2,7 +2,7 @@
 
 ## Configuration
 
-See (example.config.yaml)[example.config.yaml].
+See [example.config.yaml](example.config.yaml).
 
 ## Metrics
 
