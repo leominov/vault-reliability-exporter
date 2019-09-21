@@ -151,11 +151,12 @@
   version = "v2.0.7"
 
 [[projects]]
-  digest = "1:75c1d706d90d4966d72b312dee0b103c7db56a21a7d10efdb4ed586751bf6c1c"
+  digest = "1:e4dbc3166b93c773e0c7bddf787e7636815f1f9cad9f487cc3eda3bec29e44a5"
   name = "github.com/prometheus/client_golang"
   packages = [
     "prometheus",
     "prometheus/internal",
+    "prometheus/promhttp",
     "prometheus/push",
   ]
   pruneopts = "UT"
@@ -288,6 +289,7 @@
   input-imports = [
     "github.com/hashicorp/vault/api",
     "github.com/prometheus/client_golang/prometheus",
+    "github.com/prometheus/client_golang/prometheus/promhttp",
     "github.com/prometheus/client_golang/prometheus/push",
     "github.com/prometheus/common/version",
     "github.com/sirupsen/logrus",

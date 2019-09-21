@@ -9,7 +9,9 @@ import (
 )
 
 var (
-	defaultRepeatInterval = time.Second
+	defaultRepeatInterval   = time.Second
+	defaultTelemetryAddress = "0.0.0.0:8080"
+	defaultTelemetryPath    = "/metrics"
 
 	defaultPGWAddr      = "127.0.0.1:9091"
 	defaultPGWNamespace = "vault_reliability_exporter"

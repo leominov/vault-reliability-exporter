@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 
 	"github.com/sirupsen/logrus"
@@ -16,10 +18,12 @@ const (
 var (
 	flagVersion = flag.Bool("version", false, "Prints version and exit.")
 
-	flagLogFormat  = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
-	flagDebug      = flag.Bool("debug", false, "Output verbose debug information.")
-	flagConfigFile = flag.String("config", "/etc/vault-reliability-exporter/config.yaml", "Path to configuration file.")
-	flagCheck      = flag.Bool("check", false, "Check configuration and exit.")
+	flagLogFormat     = flag.String("log-format", "txt", "Log format, valid options are txt and json.")
+	flagDebug         = flag.Bool("debug", false, "Output verbose debug information.")
+	flagConfigFile    = flag.String("config", "/etc/vault-reliability-exporter/config.yaml", "Path to configuration file.")
+	flagCheck         = flag.Bool("check", false, "Check configuration and exit.")
+	flagListenAddress = flag.String("web.listen-address", ":9356", "Address to listen on for web interface and telemetry.")
+	flagMetricPath    = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 )
 
 func main() {
@@ -55,6 +59,12 @@ func main() {
 		fmt.Println(config.String())
 		return
 	}
+
+	go func() {
+		http.Handle(*flagMetricPath, promhttp.Handler())
+		logrus.Printf("Providing metrics at %s%s", *flagListenAddress, *flagMetricPath)
+		logrus.Fatal(http.ListenAndServe(*flagListenAddress, nil))
+	}()
 
 	collector := NewVaultExporter(config)
 	collector.Collect()
