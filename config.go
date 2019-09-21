@@ -33,6 +33,7 @@ type Config struct {
 	PGW            PushgatewayOptions `yaml:"pgw_config"`
 	Vault          VaultOptions       `yaml:"vault_config"`
 	RepeatInterval time.Duration      `yaml:"repeat_interval"`
+	Delay          time.Duration      `yaml:"delay"`
 }
 
 type PushgatewayOptions struct {
@@ -118,6 +119,9 @@ func (v *VaultProfile) SetDefaults() {
 func (c *Config) SetDefaults() {
 	if c.RepeatInterval <= 0 {
 		c.RepeatInterval = defaultRepeatInterval
+	}
+	if c.Delay < 0 {
+		c.Delay = 0
 	}
 	c.PGW.SetDefaults()
 	c.Vault.SetDefaults()

@@ -84,8 +84,8 @@ func NewVaultExporter(config *Config) *Exporter {
 		execBucketCounters: make(map[string]map[float64]float64),
 	}
 
+	e.execBucketCounters[fmt.Sprintf("%s/%s", BucketTotal, "all")] = copyMap(defaultBucket)
 	for _, profile := range config.Vault.Profiles {
-		e.execBucketCounters[fmt.Sprintf("%s/%s", BucketTotal, profile.Name)] = copyMap(defaultBucket)
 		e.execBucketCounters[fmt.Sprintf("%s/%s", BucketAuth, profile.Name)] = copyMap(defaultBucket)
 		e.execBucketCounters[fmt.Sprintf("%s/%s", BucketRead, profile.Name)] = copyMap(defaultBucket)
 		e.execBucketCounters[fmt.Sprintf("%s/%s", BucketWrite, profile.Name)] = copyMap(defaultBucket)
@@ -190,8 +190,8 @@ func (e *Exporter) IncBucketCounter(name, profile string, duration float64) {
 }
 
 func (e *Exporter) resetErrorCounters() {
+	e.AddGaugeValues(e.errors, []string{BucketTotal, "all"}).Set(0.0)
 	for _, profile := range e.config.Vault.Profiles {
-		e.AddGaugeValues(e.errors, []string{BucketTotal, profile.Name}).Set(0.0)
 		e.AddGaugeValues(e.errors, []string{BucketAuth, profile.Name}).Set(0.0)
 		e.AddGaugeValues(e.errors, []string{BucketRead, profile.Name}).Set(0.0)
 		e.AddGaugeValues(e.errors, []string{BucketWrite, profile.Name}).Set(0.0)
@@ -204,16 +204,19 @@ func (e *Exporter) Collect() {
 		select {
 		case <-time.NewTicker(e.config.RepeatInterval).C:
 			logrus.Debug("Tick")
+
 			e.AddCounterValues(e.totalScrapes, nil).Inc()
 			e.AddGaugeValues(e.scrapeTime, nil).SetToCurrentTime()
 
-			now := time.Now().UnixNano()
+			duration := float64(0)
 			for _, profile := range e.config.Vault.Profiles {
+				now := time.Now().UnixNano()
 				if err := e.collect(profile); err != nil {
 					e.AddGaugeValues(e.errors, []string{BucketTotal, "all"}).Inc()
 				}
+				duration += float64(time.Now().UnixNano()-now) / 1000000000
+				time.Sleep(e.config.Delay)
 			}
-			duration := float64(time.Now().UnixNano()-now) / 1000000000
 
 			e.AddGaugeValues(e.duration, nil).Set(duration)
 			e.IncBucketCounter(BucketTotal, "all", duration)
