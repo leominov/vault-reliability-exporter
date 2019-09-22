@@ -96,6 +96,8 @@ func (e *Exporter) AddHistogramValues(h *prometheus.HistogramVec, val []string) 
 }
 
 func (e *Exporter) send() {
+	logrus.Debug("Push metrics")
+
 	if err := push.Collectors(
 		e.config.PGW.Job,
 		push.HostnameGroupingKey(),
@@ -116,12 +118,15 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 		duration float64
 	)
 
+	log := logrus.WithField("profile", profile.Name)
+
 	// Check aut
 	now = time.Now().UnixNano()
+	log.Debug("Login()")
 	vaultCli, err := NewClient(e.config.Vault.Addr, e.config.Vault.Timeout, profile)
 	if err != nil {
 		e.AddGaugeValues(e.errors, []string{BucketAuth, profile.Name}).Inc()
-		logrus.Error(err)
+		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
@@ -129,10 +134,11 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 
 	// Check write
 	now = time.Now().UnixNano()
+	log.Debugf("Write(%s, %v)", profile.SecretPath, profile.SecretData)
 	_, err = vaultCli.Logical().Write(profile.SecretPath, profile.SecretData)
 	if err != nil {
 		e.AddGaugeValues(e.errors, []string{BucketWrite, profile.Name}).Inc()
-		logrus.Error(err)
+		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
@@ -140,10 +146,11 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 
 	// Check read
 	now = time.Now().UnixNano()
+	log.Debugf("Read(%s)", profile.SecretPath)
 	_, err = vaultCli.Logical().Read(profile.SecretPath)
 	if err != nil {
 		e.AddGaugeValues(e.errors, []string{BucketRead, profile.Name}).Inc()
-		logrus.Error(err)
+		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
