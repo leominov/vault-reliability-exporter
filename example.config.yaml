@@ -2,8 +2,12 @@
 repeat_interval: 1s
 pgw_config:
   url: http://127.0.0.1:9091
+  timeout: 30s
   namespace: vault_reliability_exporter
   job: vault_reliability_job
+  basic_auth:
+    username: login
+    password: pwd
   labels:
     env: test
 vault_config:

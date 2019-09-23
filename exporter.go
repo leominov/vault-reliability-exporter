@@ -83,6 +83,13 @@ func NewVaultExporter(config *Config) *Exporter {
 func (e *Exporter) setupPusher() {
 	e.pusher = push.New(e.config.PGW.Addr, e.config.PGW.Job)
 
+	if e.config.PGW.BasicAuth != nil {
+		e.pusher.BasicAuth(
+			e.config.PGW.BasicAuth.Username,
+			e.config.PGW.BasicAuth.Password,
+		)
+	}
+
 	e.pusher.Client(&http.Client{
 		Timeout:   e.config.PGW.Timeout,
 		Transport: defaultTransport,
