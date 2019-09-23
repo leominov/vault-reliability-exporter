@@ -19,9 +19,9 @@ vault_config:
       auth_path: auth/userpass/login/guest
       auth_data:
         password: guest
-      secret_path: test/userpass-write
+      # secret_path: probe-secrets/test
       # secret_data:
       #   foo: bar
     - name: token
       auth_token: VAULT_TOKEN
-      secret_path: test/token-write
+      # secret_path: probe-secrets/test
