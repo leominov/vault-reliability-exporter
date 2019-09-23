@@ -1,6 +1,9 @@
 package main
 
 import (
+	"net"
+	"net/http"
+	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -18,19 +21,27 @@ const (
 
 var (
 	defaultBuckets = []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 20, 30, 40, 50}
+
+	defaultTransport = &http.Transport{
+		Dial: (&net.Dialer{
+			Timeout: 5 * time.Second,
+		}).Dial,
+		TLSHandshakeTimeout: 5 * time.Second,
+	}
 )
 
 type Exporter struct {
 	config *Config
+	pusher *push.Pusher
 
 	// profile
 	errors        *prometheus.GaugeVec
 	execHistogram *prometheus.HistogramVec
 
 	// global
-	scrapeTime   *prometheus.GaugeVec
-	totalScrapes *prometheus.CounterVec
-	duration     *prometheus.GaugeVec
+	scrapeTime   prometheus.Gauge
+	totalScrapes prometheus.Counter
+	duration     prometheus.Gauge
 
 	execBucketCounters map[string]map[float64]float64
 }
@@ -38,76 +49,67 @@ type Exporter struct {
 func NewVaultExporter(config *Config) *Exporter {
 	e := &Exporter{
 		config: config,
-		scrapeTime: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		scrapeTime: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.PGW.Namespace,
 			Name:      "scrape_time",
 			Help:      "The last scrape time.",
-		}, joinWithLabelsMap([]string{}, config.PGW.Labels)),
-		totalScrapes: prometheus.NewCounterVec(prometheus.CounterOpts{
+		}),
+		totalScrapes: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: config.PGW.Namespace,
 			Name:      "scrapes_total",
 			Help:      "Current total vault scrapes.",
-		}, joinWithLabelsMap([]string{}, config.PGW.Labels)),
+		}),
 		errors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: config.PGW.Namespace,
 			Name:      "errors_total",
 			Help:      "Current total errors.",
-		}, joinWithLabelsMap([]string{"type", "profile"}, config.PGW.Labels)),
-		duration: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		}, []string{"type", "profile"}),
+		duration: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: config.PGW.Namespace,
 			Name:      "last_scrape_duration_seconds",
 			Help:      "The last scrape duration.",
-		}, joinWithLabelsMap([]string{}, config.PGW.Labels)),
+		}),
 		execHistogram: prometheus.NewHistogramVec(prometheus.HistogramOpts{
 			Namespace: config.PGW.Namespace,
 			Name:      "execution_duration_seconds",
 			Help:      "Execution time.",
 			Buckets:   defaultBuckets,
-		}, joinWithLabelsMap([]string{"type", "profile"}, config.PGW.Labels)),
+		}, []string{"type", "profile"}),
 	}
+	e.setupPusher()
 	return e
 }
 
-func (e *Exporter) AddGaugeValues(g *prometheus.GaugeVec, val []string) prometheus.Gauge {
-	var values []string
-	if len(val) != 0 {
-		values = val
-	}
-	values = append(values, labelValues(e.config.PGW.Labels)...)
-	return g.WithLabelValues(values...)
-}
+func (e *Exporter) setupPusher() {
+	e.pusher = push.New(e.config.PGW.Addr, e.config.PGW.Job)
 
-func (e *Exporter) AddCounterValues(c *prometheus.CounterVec, val []string) prometheus.Counter {
-	var values []string
-	if len(val) != 0 {
-		values = val
-	}
-	values = append(values, labelValues(e.config.PGW.Labels)...)
-	return c.WithLabelValues(values...)
-}
+	e.pusher.Client(&http.Client{
+		Timeout:   e.config.PGW.Timeout,
+		Transport: defaultTransport,
+	})
 
-func (e *Exporter) AddHistogramValues(h *prometheus.HistogramVec, val []string) prometheus.Observer {
-	var values []string
-	if len(val) != 0 {
-		values = val
+	for k, v := range e.config.PGW.Labels {
+		e.pusher.Grouping(k, v)
 	}
-	values = append(values, labelValues(e.config.PGW.Labels)...)
-	return h.WithLabelValues(values...)
+	hostname, err := os.Hostname()
+	if err != nil {
+		hostname = "unknown"
+	}
+	e.pusher.Grouping("instance", hostname)
+
+	e.pusher.
+		Collector(e.scrapeTime).
+		Collector(e.totalScrapes).
+		Collector(e.errors).
+		Collector(e.duration).
+		Collector(e.execHistogram)
 }
 
 func (e *Exporter) send() {
 	logrus.Debug("Push metrics")
 
-	if err := push.Collectors(
-		e.config.PGW.Job,
-		push.HostnameGroupingKey(),
-		e.config.PGW.Addr,
-		e.scrapeTime,
-		e.totalScrapes,
-		e.errors,
-		e.duration,
-		e.execHistogram,
-	); err != nil {
+	err := e.pusher.Push()
+	if err != nil {
 		logrus.Errorf("Could not push to Pushgateway: %v", err)
 	}
 }
@@ -123,48 +125,53 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 	// Check aut
 	now = time.Now().UnixNano()
 	log.Debug("Login()")
-	vaultCli, err := NewClient(e.config.Vault.Addr, e.config.Vault.Timeout, profile)
+	vaultCli, err := NewClient(
+		e.config.Vault.Addr,
+		e.config.Vault.Timeout,
+		e.config.Vault.MaxRetries,
+		profile,
+	)
 	if err != nil {
-		e.AddGaugeValues(e.errors, []string{BucketAuth, profile.Name}).Inc()
+		e.errors.WithLabelValues([]string{BucketAuth, profile.Name}...).Inc()
 		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
-	e.AddHistogramValues(e.execHistogram, []string{BucketAuth, profile.Name}).Observe(duration)
+	e.execHistogram.WithLabelValues([]string{BucketAuth, profile.Name}...).Observe(duration)
 
 	// Check write
 	now = time.Now().UnixNano()
 	log.Debugf("Write(%s, %v)", profile.SecretPath, profile.SecretData)
 	_, err = vaultCli.Logical().Write(profile.SecretPath, profile.SecretData)
 	if err != nil {
-		e.AddGaugeValues(e.errors, []string{BucketWrite, profile.Name}).Inc()
+		e.errors.WithLabelValues([]string{BucketWrite, profile.Name}...).Inc()
 		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
-	e.AddHistogramValues(e.execHistogram, []string{BucketWrite, profile.Name}).Observe(duration)
+	e.execHistogram.WithLabelValues([]string{BucketWrite, profile.Name}...).Observe(duration)
 
 	// Check read
 	now = time.Now().UnixNano()
 	log.Debugf("Read(%s)", profile.SecretPath)
 	_, err = vaultCli.Logical().Read(profile.SecretPath)
 	if err != nil {
-		e.AddGaugeValues(e.errors, []string{BucketRead, profile.Name}).Inc()
+		e.errors.WithLabelValues([]string{BucketRead, profile.Name}...).Inc()
 		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
-	e.AddHistogramValues(e.execHistogram, []string{BucketRead, profile.Name}).Observe(duration)
+	e.execHistogram.WithLabelValues([]string{BucketRead, profile.Name}...).Observe(duration)
 
 	return nil
 }
 
 func (e *Exporter) resetErrorCounters() {
-	e.AddGaugeValues(e.errors, []string{BucketTotal, "all"}).Set(0.0)
+	e.errors.WithLabelValues([]string{BucketTotal, "all"}...).Set(0.0)
 	for _, profile := range e.config.Vault.Profiles {
-		e.AddGaugeValues(e.errors, []string{BucketAuth, profile.Name}).Set(0.0)
-		e.AddGaugeValues(e.errors, []string{BucketRead, profile.Name}).Set(0.0)
-		e.AddGaugeValues(e.errors, []string{BucketWrite, profile.Name}).Set(0.0)
+		e.errors.WithLabelValues([]string{BucketAuth, profile.Name}...).Set(0.0)
+		e.errors.WithLabelValues([]string{BucketRead, profile.Name}...).Set(0.0)
+		e.errors.WithLabelValues([]string{BucketWrite, profile.Name}...).Set(0.0)
 	}
 }
 
@@ -175,21 +182,21 @@ func (e *Exporter) Collect() {
 		case <-time.NewTicker(e.config.RepeatInterval).C:
 			logrus.Debug("Tick")
 
-			e.AddCounterValues(e.totalScrapes, nil).Inc()
-			e.AddGaugeValues(e.scrapeTime, nil).SetToCurrentTime()
+			e.totalScrapes.Inc()
+			e.scrapeTime.SetToCurrentTime()
 
 			duration := float64(0)
 			for _, profile := range e.config.Vault.Profiles {
 				now := time.Now().UnixNano()
 				if err := e.collect(profile); err != nil {
-					e.AddGaugeValues(e.errors, []string{BucketTotal, "all"}).Inc()
+					e.errors.WithLabelValues([]string{BucketTotal, "all"}...).Inc()
 				}
 				duration += float64(time.Now().UnixNano()-now) / 1000000000
 				time.Sleep(e.config.Delay)
 			}
 
-			e.AddGaugeValues(e.duration, nil).Set(duration)
-			e.AddHistogramValues(e.execHistogram, []string{BucketTotal, "all"}).Observe(duration)
+			e.duration.Set(duration)
+			e.execHistogram.WithLabelValues([]string{BucketTotal, "all"}...).Observe(duration)
 
 			for name, bucker := range e.execBucketCounters {
 				logrus.Debugf("Counters %s: %#v", name, bucker)

@@ -6,10 +6,11 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
-func NewClient(addr string, timeout time.Duration, profile *VaultProfile) (*api.Client, error) {
+func NewClient(addr string, timeout time.Duration, retries int, profile *VaultProfile) (*api.Client, error) {
 	config := api.Config{
-		Address: addr,
-		Timeout: timeout,
+		Address:    addr,
+		Timeout:    timeout,
+		MaxRetries: retries,
 	}
 	client, err := api.NewClient(&config)
 	if err != nil {

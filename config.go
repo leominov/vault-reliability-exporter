@@ -14,11 +14,13 @@ var (
 	defaultPGWAddr      = "127.0.0.1:9091"
 	defaultPGWNamespace = "vault_reliability_exporter"
 	defaultPGWJob       = "vault_reliability_job"
+	defaultPGWTimeout   = 30 * time.Second
 
-	defaultVaultAddr    = "https://127.0.0.1:8200"
-	defaultVaultTimeout = 30 * time.Second
-	defaultSecretPath   = "probe-secrets/test"
-	defaultSecretData   = map[string]interface{}{
+	defaultVaultAddr       = "https://127.0.0.1:8200"
+	defaultVaultTimeout    = 30 * time.Second
+	defaultVaultMaxRetries = 2
+	defaultSecretPath      = "probe-secrets/test"
+	defaultSecretData      = map[string]interface{}{
 		"foo": "bar",
 	}
 	defaultVaultProfile = &VaultProfile{
@@ -38,15 +40,23 @@ type Config struct {
 
 type PushgatewayOptions struct {
 	Addr      string            `yaml:"url"`
+	Timeout   time.Duration     `yaml:"timeout"`
+	BasicAuth *BasicAuth        `yaml:"basic_auth"`
 	Namespace string            `yaml:"namespace"`
 	Job       string            `yaml:"job"`
 	Labels    map[string]string `yaml:"labels"`
 }
 
+type BasicAuth struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+}
+
 type VaultOptions struct {
-	Addr     string          `yaml:"url"`
-	Timeout  time.Duration   `yaml:"timeout"`
-	Profiles []*VaultProfile `yaml:"profiles"`
+	Addr       string          `yaml:"url"`
+	Timeout    time.Duration   `yaml:"timeout"`
+	MaxRetries int             `yaml:"max_retries"`
+	Profiles   []*VaultProfile `yaml:"profiles"`
 }
 
 type VaultProfile struct {
@@ -81,6 +91,9 @@ func (p *PushgatewayOptions) SetDefaults() {
 	if len(p.Job) == 0 {
 		p.Job = defaultPGWJob
 	}
+	if p.Timeout <= 0 {
+		p.Timeout = defaultPGWTimeout
+	}
 }
 
 func (v *VaultOptions) SetDefaults() {
@@ -89,6 +102,9 @@ func (v *VaultOptions) SetDefaults() {
 	}
 	if v.Timeout <= 0 {
 		v.Timeout = defaultVaultTimeout
+	}
+	if v.MaxRetries < 0 {
+		v.MaxRetries = defaultVaultMaxRetries
 	}
 	if len(v.Profiles) == 0 {
 		v.Profiles = append(v.Profiles, defaultVaultProfile)
