@@ -14,6 +14,7 @@ pgw_config:
 vault_config:
   url: https://127.0.0.1:8200
   # timeout: 30s
+  # max_retries: 2
   profiles:
     - name: userpass
       auth_path: auth/userpass/login/guest
