@@ -5,9 +5,9 @@ pgw_config:
   timeout: 30s
   namespace: vault_reliability_exporter
   job: vault_reliability_job
-  basic_auth:
-    username: login
-    password: pwd
+  # basic_auth:
+  #   username: login
+  #   password: pwd
   labels:
     env: test
 vault_config:
@@ -19,8 +19,8 @@ vault_config:
       auth_data:
         password: guest
       secret_path: test/userpass-write
-      secret_data:
-        foo: bar
+      # secret_data:
+      #   foo: bar
     - name: token
       auth_token: VAULT_TOKEN
       secret_path: test/token-write
