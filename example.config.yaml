@@ -1,5 +1,6 @@
 ---
 # repeat_interval: 1s
+# delay: 0s
 # listen_address: :8080
 pgw_config:
   url: http://127.0.0.1:9091
