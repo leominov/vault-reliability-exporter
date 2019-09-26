@@ -146,6 +146,10 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
 	e.execHistogram.WithLabelValues([]string{BucketAuth, profile.Name}...).Observe(duration)
 
+	if len(profile.SecretPath) == 0 {
+		return nil
+	}
+
 	// Check write
 	now = time.Now().UnixNano()
 	log.Debugf("Write(%s, %v)", profile.SecretPath, profile.SecretData)

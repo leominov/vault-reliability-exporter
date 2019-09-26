@@ -19,7 +19,6 @@ var (
 	defaultVaultAddr       = "https://127.0.0.1:8200"
 	defaultVaultTimeout    = 30 * time.Second
 	defaultVaultMaxRetries = 2
-	defaultSecretPath      = "probe-secrets/test"
 	defaultSecretData      = map[string]interface{}{
 		"foo": "bar",
 	}
@@ -118,9 +117,6 @@ func (v *VaultOptions) SetDefaults() {
 }
 
 func (v *VaultProfile) SetDefaults() {
-	if len(v.SecretPath) == 0 {
-		v.SecretPath = defaultSecretPath
-	}
 	if len(v.SecretData) == 0 || v.SecretData == nil {
 		v.SecretData = defaultSecretData
 	}
