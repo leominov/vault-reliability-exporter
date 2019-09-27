@@ -59,12 +59,13 @@ type VaultOptions struct {
 }
 
 type VaultProfile struct {
-	Name       string                 `yaml:"name"`
-	AuthPath   string                 `yaml:"auth_path"`
-	AuthData   map[string]interface{} `yaml:"auth_data,omitempty"`
-	AuthToken  string                 `yaml:"auth_token,omitempty"`
-	SecretPath string                 `yaml:"secret_path"`
-	SecretData map[string]interface{} `yaml:"secret_data"`
+	Name        string                 `yaml:"name"`
+	AuthPath    string                 `yaml:"auth_path"`
+	AuthData    map[string]interface{} `yaml:"auth_data,omitempty"`
+	AuthToken   string                 `yaml:"auth_token,omitempty"`
+	RevokeToken bool                   `yaml:"revoke_token"`
+	SecretPath  string                 `yaml:"secret_path"`
+	SecretData  map[string]interface{} `yaml:"secret_data"`
 }
 
 func (c *Config) LoadFromFile(filename string) error {

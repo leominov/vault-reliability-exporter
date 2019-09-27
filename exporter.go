@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/hashicorp/vault/api"
 	"github.com/sirupsen/logrus"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,10 +14,11 @@ import (
 )
 
 const (
-	BucketTotal = "total"
-	BucketAuth  = "auth"
-	BucketRead  = "read"
-	BucketWrite = "write"
+	BucketTotal  = "total"
+	BucketAuth   = "auth"
+	BucketRead   = "read"
+	BucketWrite  = "write"
+	BucketRevoke = "revoke"
 )
 
 var (
@@ -122,16 +124,11 @@ func (e *Exporter) send() {
 }
 
 func (e *Exporter) collect(profile *VaultProfile) error {
-	var (
-		now      int64
-		duration float64
-	)
-
 	log := logrus.WithField("profile", profile.Name)
 
-	// Check aut
-	now = time.Now().UnixNano()
-	log.Debug("Login()")
+	// Check auth
+	log.Debugf("Login(%s)", profile.AuthPath)
+	now := time.Now().UnixNano()
 	vaultCli, err := NewClient(
 		e.config.Vault.Addr,
 		e.config.Vault.Timeout,
@@ -143,29 +140,37 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 		log.Error(err)
 		return err
 	}
-	duration = float64(time.Now().UnixNano()-now) / 1000000000
+	duration := float64(time.Now().UnixNano()-now) / 1000000000
 	e.execHistogram.WithLabelValues([]string{BucketAuth, profile.Name}...).Observe(duration)
 
-	if len(profile.SecretPath) == 0 {
-		return nil
+	if len(profile.SecretPath) != 0 {
+		// Check read and write
+		e.collectVaultReadWrite(vaultCli, profile, log)
 	}
 
-	// Check write
-	now = time.Now().UnixNano()
+	if profile.RevokeToken {
+		// Check revoke
+		e.collectVaultRevoke(vaultCli, profile, log)
+	}
+
+	return nil
+}
+
+func (e *Exporter) collectVaultReadWrite(cli *api.Client, profile *VaultProfile, log *logrus.Entry) error {
 	log.Debugf("Write(%s, %v)", profile.SecretPath, profile.SecretData)
-	_, err = vaultCli.Logical().Write(profile.SecretPath, profile.SecretData)
+	now := time.Now().UnixNano()
+	_, err := cli.Logical().Write(profile.SecretPath, profile.SecretData)
 	if err != nil {
 		e.errors.WithLabelValues([]string{BucketWrite, profile.Name}...).Inc()
 		log.Error(err)
 		return err
 	}
-	duration = float64(time.Now().UnixNano()-now) / 1000000000
+	duration := float64(time.Now().UnixNano()-now) / 1000000000
 	e.execHistogram.WithLabelValues([]string{BucketWrite, profile.Name}...).Observe(duration)
 
-	// Check read
-	now = time.Now().UnixNano()
 	log.Debugf("Read(%s)", profile.SecretPath)
-	_, err = vaultCli.Logical().Read(profile.SecretPath)
+	now = time.Now().UnixNano()
+	_, err = cli.Logical().Read(profile.SecretPath)
 	if err != nil {
 		e.errors.WithLabelValues([]string{BucketRead, profile.Name}...).Inc()
 		log.Error(err)
@@ -173,7 +178,20 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
 	e.execHistogram.WithLabelValues([]string{BucketRead, profile.Name}...).Observe(duration)
+	return nil
+}
 
+func (e *Exporter) collectVaultRevoke(cli *api.Client, profile *VaultProfile, log *logrus.Entry) error {
+	log.Debug("Revoke(self)")
+	now := time.Now().UnixNano()
+	err := cli.Auth().Token().RevokeSelf(cli.Token())
+	if err != nil {
+		e.errors.WithLabelValues([]string{BucketRevoke, profile.Name}...).Inc()
+		log.Error(err)
+		return err
+	}
+	duration := float64(time.Now().UnixNano()-now) / 1000000000
+	e.execHistogram.WithLabelValues([]string{BucketRevoke, profile.Name}...).Observe(duration)
 	return nil
 }
 

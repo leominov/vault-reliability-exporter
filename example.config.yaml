@@ -22,6 +22,7 @@ vault_config:
       auth_data:
         password: guest
       secret_path: probe-secrets/test
+      # revoke_token: false
       # secret_data:
       #   foo: bar
     - name: token
