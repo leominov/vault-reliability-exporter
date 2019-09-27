@@ -1,5 +1,7 @@
 # HashiCorp Vault Reliability Exporter
 
+![Graph](graph.png)
+
 ## Configuration
 
 See [example.config.yaml](example.config.yaml).
