@@ -3,3 +3,5 @@ vault-reliability-exporter
 .tarballs
 .release
 config.yaml
+/.vscode
+/.idea
