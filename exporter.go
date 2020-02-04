@@ -145,12 +145,18 @@ func (e *Exporter) collect(profile *VaultProfile) error {
 
 	if len(profile.SecretPath) != 0 {
 		// Check read and write
-		e.collectVaultReadWrite(vaultCli, profile, log)
+		err := e.collectVaultReadWrite(vaultCli, profile, log)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	if profile.RevokeToken {
 		// Check revoke
-		e.collectVaultRevoke(vaultCli, profile, log)
+		err := e.collectVaultRevoke(vaultCli, profile, log)
+		if err != nil {
+			log.Error(err)
+		}
 	}
 
 	return nil
@@ -162,7 +168,6 @@ func (e *Exporter) collectVaultReadWrite(cli *api.Client, profile *VaultProfile,
 	_, err := cli.Logical().Write(profile.SecretPath, profile.SecretData)
 	if err != nil {
 		e.errors.WithLabelValues([]string{BucketWrite, profile.Name}...).Inc()
-		log.Error(err)
 		return err
 	}
 	duration := float64(time.Now().UnixNano()-now) / 1000000000
@@ -173,7 +178,6 @@ func (e *Exporter) collectVaultReadWrite(cli *api.Client, profile *VaultProfile,
 	_, err = cli.Logical().Read(profile.SecretPath)
 	if err != nil {
 		e.errors.WithLabelValues([]string{BucketRead, profile.Name}...).Inc()
-		log.Error(err)
 		return err
 	}
 	duration = float64(time.Now().UnixNano()-now) / 1000000000
@@ -187,7 +191,6 @@ func (e *Exporter) collectVaultRevoke(cli *api.Client, profile *VaultProfile, lo
 	err := cli.Auth().Token().RevokeSelf(cli.Token())
 	if err != nil {
 		e.errors.WithLabelValues([]string{BucketRevoke, profile.Name}...).Inc()
-		log.Error(err)
 		return err
 	}
 	duration := float64(time.Now().UnixNano()-now) / 1000000000
