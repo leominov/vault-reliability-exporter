@@ -150,7 +150,7 @@ func (v *VaultProfile) processKubernetesJWTToken(key string, val interface{}) er
 	if !ok {
 		return nil
 	}
-	if str == "..." {
+	if strings.ToLower(str) == "%jwt%" {
 		b, err := ioutil.ReadFile(defaultKubernetesJWTTokenLocation)
 		if err != nil {
 			return err
