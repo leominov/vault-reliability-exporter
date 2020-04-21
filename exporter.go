@@ -100,10 +100,16 @@ func (e *Exporter) setupPusher() {
 	for k, v := range e.config.PGW.Labels {
 		e.pusher.Grouping(k, v)
 	}
-	hostname, err := os.Hostname()
-	if err != nil {
-		hostname = "unknown"
+
+	hostname := e.config.PGW.Instance
+	if len(hostname) == 0 {
+		hostnameOriginal, err := os.Hostname()
+		if err != nil {
+			hostname = "unknown"
+		}
+		hostname = hostnameOriginal
 	}
+
 	e.pusher.Grouping("instance", hostname)
 
 	e.pusher.
