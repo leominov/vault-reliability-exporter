@@ -142,21 +142,26 @@ func (v *VaultProfile) SetDefaults() {
 	}
 }
 
-func (v *VaultProfile) processKubernetesJWTToken(key string, val interface{}) error {
+func IsJWTShortcut(key string, val interface{}) bool {
 	if strings.ToLower(key) != "jwt" {
-		return nil
+		return false
 	}
 	str, ok := val.(string)
 	if !ok {
+		return false
+	}
+	return strings.ToLower(str) == "%jwt%"
+}
+
+func (v *VaultProfile) processKubernetesJWTToken(key string, val interface{}) error {
+	if !IsJWTShortcut(key, val) {
 		return nil
 	}
-	if strings.ToLower(str) == "%jwt%" {
-		b, err := ioutil.ReadFile(defaultKubernetesJWTTokenLocation)
-		if err != nil {
-			return err
-		}
-		v.AuthData[key] = string(b)
+	b, err := ioutil.ReadFile(defaultKubernetesJWTTokenLocation)
+	if err != nil {
+		return err
 	}
+	v.AuthData[key] = string(b)
 	return nil
 }
 
