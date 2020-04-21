@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"strings"
 	"time"
 
 	yaml "gopkg.in/yaml.v2"
@@ -28,6 +29,8 @@ var (
 			"password": "guest",
 		},
 	}
+
+	defaultKubernetesJWTTokenLocation = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 )
 
 type Config struct {
@@ -78,6 +81,16 @@ func (c *Config) LoadFromFile(filename string) error {
 		return err
 	}
 	c.SetDefaults()
+	return c.ProcessVaultProfiles()
+}
+
+func (c *Config) ProcessVaultProfiles() error {
+	for _, profile := range c.Vault.Profiles {
+		err := profile.ProcessAuthData()
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -127,6 +140,39 @@ func (v *VaultProfile) SetDefaults() {
 	if len(v.AuthData) > 0 {
 		v.AuthToken = ""
 	}
+}
+
+func IsJWTShortcut(key string, val interface{}) bool {
+	if strings.ToLower(key) != "jwt" {
+		return false
+	}
+	str, ok := val.(string)
+	if !ok {
+		return false
+	}
+	return strings.ToLower(str) == "%jwt%"
+}
+
+func (v *VaultProfile) processKubernetesJWTToken(key string, val interface{}) error {
+	if !IsJWTShortcut(key, val) {
+		return nil
+	}
+	b, err := ioutil.ReadFile(defaultKubernetesJWTTokenLocation)
+	if err != nil {
+		return err
+	}
+	v.AuthData[key] = string(b)
+	return nil
+}
+
+func (v *VaultProfile) ProcessAuthData() error {
+	for key, val := range v.AuthData {
+		err := v.processKubernetesJWTToken(key, val)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *Config) SetDefaults() {
