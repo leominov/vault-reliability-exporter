@@ -45,6 +45,7 @@ type PushgatewayOptions struct {
 	Timeout   time.Duration     `yaml:"timeout"`
 	BasicAuth *BasicAuth        `yaml:"basic_auth"`
 	Namespace string            `yaml:"namespace"`
+	Instance  string            `yaml:"instance"`
 	Job       string            `yaml:"job"`
 	Labels    map[string]string `yaml:"labels"`
 }
