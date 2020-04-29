@@ -5,3 +5,4 @@ vault-reliability-exporter
 config.yaml
 /.vscode
 /.idea
+coverage.txt

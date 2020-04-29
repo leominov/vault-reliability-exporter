@@ -7,7 +7,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
-
 	"github.com/sirupsen/logrus"
 )
 

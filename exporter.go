@@ -7,10 +7,9 @@ import (
 	"time"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/sirupsen/logrus"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/push"
+	"github.com/sirupsen/logrus"
 )
 
 const (
