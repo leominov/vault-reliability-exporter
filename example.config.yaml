@@ -18,7 +18,9 @@ vault_config:
   # max_retries: 2
   profiles:
     - name: userpass
+      # May be rewritten by setting VRE_PROFILE_USERPASS_AUTH_PATH environment variable
       auth_path: auth/userpass/login/guest
+      # May be rewritten by setting VRE_PROFILE_USERPASS_AUTH_DATA environment variable
       auth_data:
         password: guest
       secret_path: probe-secrets/test
@@ -26,5 +28,6 @@ vault_config:
       # secret_data:
       #   foo: bar
     - name: token
+      # May be rewritten by setting VRE_PROFILE_TOKEN_AUTH_TOKEN environment variable
       auth_token: VAULT_TOKEN
       # secret_path: probe-secrets/test
