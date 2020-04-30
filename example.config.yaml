@@ -31,3 +31,6 @@ vault_config:
       # Value may be rewritten by VRE_PROFILE_TOKEN_AUTH_TOKEN environment variable
       auth_token: VAULT_TOKEN
       # secret_path: probe-secrets/test
+# telemetry_config:
+#   pushgateway_enabled: true
+#   http_enabled: false

@@ -239,7 +239,9 @@ func (e *Exporter) Collect() {
 				logrus.Debugf("Counters %s: %#v", name, bucket)
 			}
 
-			e.send()
+			if *e.config.Telemetry.PushgatewayEnabled {
+				e.send()
+			}
 		}
 	}
 }

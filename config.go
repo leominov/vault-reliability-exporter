@@ -42,6 +42,12 @@ type Config struct {
 	Vault          VaultOptions       `yaml:"vault_config"`
 	RepeatInterval time.Duration      `yaml:"repeat_interval"`
 	Delay          time.Duration      `yaml:"delay"`
+	Telemetry      TelemetryOptions   `yaml:"telemetry_config"`
+}
+
+type TelemetryOptions struct {
+	PushgatewayEnabled *bool `yaml:"pushgateway_enabled"`
+	HTTPEnabled        *bool `yaml:"http_enabled"`
 }
 
 type PushgatewayOptions struct {
@@ -175,6 +181,15 @@ func (v *VaultProfile) SetDefaults() {
 	}
 }
 
+func (t *TelemetryOptions) SetDefaults() {
+	if t.PushgatewayEnabled == nil {
+		t.PushgatewayEnabled = Bool(true)
+	}
+	if t.HTTPEnabled == nil {
+		t.HTTPEnabled = Bool(false)
+	}
+}
+
 func IsJWTShortcut(key string, val interface{}) bool {
 	if strings.ToLower(key) != "jwt" {
 		return false
@@ -217,6 +232,7 @@ func (c *Config) SetDefaults() {
 	}
 	c.PGW.SetDefaults()
 	c.Vault.SetDefaults()
+	c.Telemetry.SetDefaults()
 }
 
 func (c *Config) String() string {
