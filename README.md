@@ -11,6 +11,7 @@ See [example.config.yaml](example.config.yaml).
 * `-check` – Check configuration and exit
 * `-config` – Path to configuration file (default "/etc/vault-reliability-exporter/config.yaml")
 * `-debug` – Output verbose debug information
+* `-expose-vault-metrics` - Expose Vault metrics with other telemetry
 * `-log-format` – Log format, valid options are txt and json (default "txt")
 * `-version` – Prints version and exit
 * `-web.listen-address` – Address to listen on for telemetry (default ":9356")
