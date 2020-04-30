@@ -21,7 +21,7 @@ var (
 	flagDebug              = flag.Bool("debug", false, "Output verbose debug information.")
 	flagConfigFile         = flag.String("config", "/etc/vault-reliability-exporter/config.yaml", "Path to configuration file.")
 	flagCheck              = flag.Bool("check", false, "Check configuration and exit.")
-	flagExposeVaultMetrics = flag.Bool("expose-vault-metrics", false, "Expose Vault metrics with other.")
+	flagExposeVaultMetrics = flag.Bool("expose-vault-metrics", false, "Expose Vault metrics with other telemetry.")
 	flagListenAddress      = flag.String("web.listen-address", ":9356", "Address to listen on for telemetry.")
 	flagMetricPath         = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 )
