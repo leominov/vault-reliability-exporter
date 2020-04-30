@@ -1,15 +1,19 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
+	envPrefix = "VRE"
+
 	defaultRepeatInterval = time.Second
 
 	defaultPGWAddr      = "127.0.0.1:9091"
@@ -127,7 +131,35 @@ func (v *VaultOptions) SetDefaults() {
 		if len(profile.Name) == 0 {
 			profile.Name = fmt.Sprintf("profile%d", i)
 		}
+		profile.LoadFromEnv()
 		profile.SetDefaults()
+	}
+}
+
+func (v *VaultProfile) authDataEnvKey() string {
+	return fmt.Sprintf("%s_PROFILE_%s_AUTH_DATA", envPrefix, strings.ToUpper(v.Name))
+}
+
+func (v *VaultProfile) authTokenEnvKey() string {
+	return fmt.Sprintf("%s_PROFILE_%s_AUTH_TOKEN", envPrefix, strings.ToUpper(v.Name))
+}
+
+func (v *VaultProfile) authPathEnvKey() string {
+	return fmt.Sprintf("%s_PROFILE_%s_AUTH_PATH", envPrefix, strings.ToUpper(v.Name))
+}
+
+func (v *VaultProfile) LoadFromEnv() {
+	if authDataRaw, ok := os.LookupEnv(v.authDataEnvKey()); ok {
+		var authData map[string]interface{}
+		if err := json.Unmarshal([]byte(authDataRaw), &authData); err == nil {
+			v.AuthData = authData
+		}
+	}
+	if authToken, ok := os.LookupEnv(v.authTokenEnvKey()); ok {
+		v.AuthToken = authToken
+	}
+	if authPath, ok := os.LookupEnv(v.authPathEnvKey()); ok {
+		v.AuthPath = authPath
 	}
 }
 

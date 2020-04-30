@@ -8,7 +8,7 @@ DOCKER_IMAGE_NAME       ?= vault-reliability-exporter
 DOCKER_IMAGE_TAG        ?= $(subst /,-,$(shell git rev-parse --abbrev-ref HEAD))
 
 
-all: format test build
+all: format test test-report build
 
 style:
 	@echo ">> checking code style"
@@ -17,6 +17,10 @@ style:
 test:
 	@echo ">> running tests"
 	@$(GO) test -short $(pkgs)
+
+test-report:
+	@echo ">> running tests"
+	@$(GO) test $(pkgs) -coverprofile=coverage.txt && go tool cover -html=coverage.txt
 
 format:
 	@echo ">> formatting code"
