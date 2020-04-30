@@ -59,7 +59,16 @@ func main() {
 		return
 	}
 
+	exporter := NewVaultExporter(config)
+
 	prometheus.MustRegister(version.NewCollector(config.PGW.Namespace))
+	prometheus.MustRegister(
+		exporter.scrapeTime,
+		exporter.totalScrapes,
+		exporter.errors,
+		exporter.duration,
+		exporter.execHistogram,
+	)
 
 	go func() {
 		http.Handle(*flagMetricPath, promhttp.Handler())
@@ -67,6 +76,5 @@ func main() {
 		logrus.Fatal(http.ListenAndServe(*flagListenAddress, nil))
 	}()
 
-	collector := NewVaultExporter(config)
-	collector.Collect()
+	exporter.Collect()
 }
