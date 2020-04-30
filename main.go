@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 	"github.com/sirupsen/logrus"
@@ -57,6 +58,8 @@ func main() {
 		fmt.Println(config.String())
 		return
 	}
+
+	prometheus.MustRegister(version.NewCollector(config.PGW.Namespace))
 
 	go func() {
 		http.Handle(*flagMetricPath, promhttp.Handler())
