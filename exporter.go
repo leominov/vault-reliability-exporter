@@ -103,10 +103,10 @@ func (e *Exporter) setupPusher() {
 	hostname := e.config.PGW.Instance
 	if len(hostname) == 0 {
 		hostnameOriginal, err := os.Hostname()
+		hostname = hostnameOriginal
 		if err != nil {
 			hostname = "unknown"
 		}
-		hostname = hostnameOriginal
 	}
 
 	e.pusher.Grouping("instance", hostname)
@@ -235,8 +235,8 @@ func (e *Exporter) Collect() {
 			e.duration.Set(duration)
 			e.execHistogram.WithLabelValues([]string{BucketTotal, "all"}...).Observe(duration)
 
-			for name, bucker := range e.execBucketCounters {
-				logrus.Debugf("Counters %s: %#v", name, bucker)
+			for name, bucket := range e.execBucketCounters {
+				logrus.Debugf("Counters %s: %#v", name, bucket)
 			}
 
 			e.send()
